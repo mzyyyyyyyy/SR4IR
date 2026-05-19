@@ -1,16 +1,30 @@
 import datetime
 import os.path as osp
+import sys
 import time
 import torch
 import torch.utils.data
 import utils.common
+import argparse
 
 from models import make_model
 from data import load_data
 
+# ── default arguments (override from command line if needed) ──────────────────
+DEFAULT_OPT  = 'options/reg/base1_v2.yaml'
+DEFAULT_TEST_ONLY  = False
+DEFAULT_VISUALIZE  = False
 
 def main():
     # load opt and args from yaml
+
+    # inject defaults when running without command-line arguments
+    if '-opt' not in sys.argv:
+        sys.argv += ['-opt', DEFAULT_OPT]
+    if DEFAULT_TEST_ONLY and '--test_only' not in sys.argv:
+        sys.argv.append('--test_only')
+    if DEFAULT_VISUALIZE and '--visualize' not in sys.argv:
+        sys.argv.append('--visualize')
     opt, args = utils.common.parse_options()
     opt = utils.common.init_distributed_mode(opt)
     
@@ -26,7 +40,7 @@ def main():
     utils.common.copy_opt_file(args.opt, osp.join('experiments', opt['task'], opt['name']))
     
     # prepare data loader
-    data_loader_train, data_loader_test, train_sampler, test_sampler = load_data(opt)
+    data_loader_train, data_loader_val, data_loader_test, train_sampler, val_sampler, test_sampler = load_data(opt)
     
     # training
     if opt.get('train', False):
@@ -42,7 +56,7 @@ def main():
         
         for epoch in range(start_epoch, end_epoch+1):
             model.train_one_epoch(data_loader_train, train_sampler, epoch)
-            model.evaluate(data_loader_test, epoch)
+            model.evaluate(data_loader_val, epoch)
             model.save(epoch)
             
         total_time = time.time() - start_time

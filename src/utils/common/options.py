@@ -34,8 +34,8 @@ def parse_options():
     task = opt.get('task', None)
     if task is None:
         task = args.opt.split('/')[1]
-        if not task in ['cls', 'det', 'seg']:
-            raise NotImplementedError("task should be specided in [cls, det, seg]")
+        if not task in ['cls', 'det', 'seg', 'reg']:
+            raise NotImplementedError("task should be specided in [cls, det, seg, reg]")
         opt['task'] = task
         
     # test_only

@@ -185,6 +185,7 @@ dependencies:
       - scikit-image==0.21.0
       - scipy==1.10.1
       - tensorboard==2.11.2
+      - wandb
       - tensorboard-data-server==0.6.1
       - tensorboard-plugin-wit==1.8.1
       - tifffile==2023.7.10
@@ -192,4 +193,3 @@ dependencies:
       - ttach==0.0.3
       - werkzeug==2.3.7
       - zipp==3.17.0
-prefix: /home/jaeha/anaconda3/envs/SR4IR

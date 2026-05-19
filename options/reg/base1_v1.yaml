@@ -1,0 +1,177 @@
+name: base1_v1
+model_type: sr4ir_reg
+num_threads: 16
+print_freq: 45  # unit: iter
+manual_seed: 200
+scale: 4
+deterministic: true
+# test_only: true
+
+dataset:
+  input_dir: "/mnt/data/data/Landsat/eur_test2/2019" 
+  output_dir:  "/mnt/data/dataset/CHM_EUR_3m_area_test2_ls" 
+  # 比较一下 ls 和 ps 的 target 有什么区别？？？
+  # 为了配合 ls 的训练，需要把 target 和 ps 都 resize 成 26672, ls 分辨率的四倍
+
+  file_type_input: "jp2"
+  file_type_output: "tif"
+  target_name: "canopy_height_" # strict formating! output file has names like "canopy_height_110,98.tif"; this is used to separate tile id from the target name
+  year: 2019
+  selected_bands: [0, 1, 2]  # Which bands to select from input (0-indexed), for landsat
+  # selected_bands: [2, 1, 0, 3] # planet blue green red, nir
+  selected_percentile: ["p50"] # which will not be used for planetscope
+  use_global_minmax: True # gb norm for input image
+  use_global_norm: False # global mean std norm
+  
+  use_global_minmax_hr: true
+  use_global_norm_hr: False # global mean std norm for HR image
+
+  use_local_norm: False # patch level norm
+  use_geo_location: False # set to true to allow separate location encoder
+  
+  globalnorm_stats_file: "/mnt/data/dataset/CHM_EUR/LS_test2_statistics.json" # json file storing statistics for each year of landsat
+  globalnorm_stats_file_hr: "/mnt/data/dataset/CHM_EUR/PS_test2_statistics.json" # json file storing statistics for each year of HR image
+
+  # targetnorm_stats_file: "/mnt/data/dataset/CHM_EUR/EUR_CHM_test_statistics.json" # json file storing statistics for each year of target
+
+
+  # multimodal
+  input_dir_hr: "/mnt/data/data/PlanetScope/EUR_crop_area_test2_ResizeMultimodal" # multimodal input
+  # file_type_m2: 'jp2'
+  selected_bands_hr: [2, 1, 0] # planet blue green red, nir
+
+  # patch_sizes: [192, 384] #based on output size!
+  # patch_sizes: [120, 240] # for planetscope，input patch size is [200, 400]]
+  # patch_sizes: [128, 256] # for unet planetscope
+  patch_sizes: [140, 280] # for depth anything planetscope
+
+  num_patches_per_tile: 100000 # in stratified sampling, this is the max sampling attempts
+
+  # target_range_edges: [0, 50, 100, 150, 200, 250, 300, 1000] # stratified sampling, target value edges (defined by the max value of each patch) (sampling equal no. patches in each group)
+  target_range_edges: [0, 5, 10, 15, 20, 25, 30, 40]
+  
+  num_patches_per_target_range: 200 # stratified sampling, e.g., attempting to get 200 patches per range, where the range group is defined by the max/median/... value of the patch
+  
+  # tile_emphasis: ['121,30', '120,28', '120,29', '112,24', '112,25', '110,26', '109,27', '112,27', '113,25', '122,26'] # sample 10 times more for these tiles
+  # tile_emphasis: ['121,30', '120,28', '120,29', '112,24', '112,25', '110,26', '109,27', '112,27', '113,25']
+  tile_emphasis: [] 
+
+  tile_lon_range: [4.4915, 14.3730] # range of lon in EUR test, used to normalize location input
+  tile_lat_range: [44.0174, 53.8989] # range of lat in EUR test, used to normalize location input
+  
+
+  # tile_lon_range: [97.0179, 98.8147] 
+  # tile_lat_range: [23.3562, 26.0498]
+
+  min_valid_ratio: 0.1
+  train_split: 0.6
+  val_split: 0.2
+  test_split: 0.2
+  run_test: False # testing involves long metric calculating steps, not necessary if not for reporting model metrics
+  split_seed: 42
+  efficient_batching: True
+  normalize_target: False # using target global mean and std
+
+  minmax_target: False # scale target to [0, 1] based on global min max
+
+  workers: 4
+  patch_coord_path: "/mnt/data/dataset/CHM_EUR/train_patch_coord/save_20260422.pkl" # if None, generate new patch coordinates
+  # Data cleaning configuration
+  nodata_cleaning: False # remove patches with high no data ratio
+  correlation_cleaning: False # spearman r between ndvi and target, True for chm, False for height
+  unit_scale_ratio: 1 # multiply the target by this value to get into regular units
+
+# network specs
+network_sr:
+  name: swinir
+  upscale: 4
+  in_chans: 3
+  img_size: 48
+  window_size: 8
+  img_range: 1.
+  depths: [6, 6, 6, 6, 6, 6]
+  embed_dim: 180
+  num_heads: [6, 6, 6, 6, 6, 6]
+  mlp_ratio: 2
+  upsampler: 'pixelshuffle'
+  resi_connection: '1conv'
+network_reg:
+  name: dav2
+  weights_backbone: "depth-anything/Depth-Anything-V2-Metric-Outdoor-Base-hf"
+
+
+# path for pretrained model
+path:
+  network_sr: experiments/pretrained_models/001_classicalSR_DIV2K_s48w8_SwinIR-M_x4.pth
+  network_sr_key: params
+  network_reg: ~ # 在初始化模型时已经加载了预训练权重，这里不需要再指定路径
+
+# training config
+train:
+  batch_size: 4  # 4 GPU
+  epoch: 300
+  save_freq: 1  # unit: epoch
+  eval_freq: 1
+  warmup_epoch: 20
+  max_iters: 150       # max training iters per epoch
+  max_eval_iters: 60   # max eval iters per epoch
+
+  # optimizer
+  optim_sr:
+    type: AdamW
+    lr: !!float 1e-4
+    weight_decay: 0
+    betas: [0.9, 0.999]
+  optim_reg:
+    type: AdamW
+    lr: !!float 2.5e-5
+    weight_decay: !!float 3e-5
+    betas: [0.9, 0.999]
+  
+  # scheduler
+  scheduler_sr:
+    type: CosineAnnealingRestartLR
+    periods: [50, 50, 50, 50, 50, 50]
+    restart_weights: [1, 1, 1, 1, 1, 1]
+    eta_min: !!float 1e-6
+  scheduler_reg:
+    type: CosineAnnealingRestartLR
+    periods: [50, 50, 50, 50, 50, 50]
+    restart_weights: [1, 1, 1, 1, 1, 1]
+    eta_min: !!float 1e-7
+
+  # phase 1 losses (disabled: training reg only)
+  pixel_opt:
+    type: L1Loss
+    loss_weight: !!float 1.0
+    reduction: mean
+  tdp_opt:
+    type: FeatureLoss
+    loss_weight: !!float 1.0
+    criterion: l1
+    layer_weights:
+      C5: 1.0
+
+  # phase 2 losses
+  huber_sr_opt:
+    type: HuberLoss
+    loss_weight: !!float 0.0
+    delta: 1.0
+    # ignore_index: ~
+  huber_hr_opt:
+    type: HuberLoss
+    loss_weight: !!float 1.0
+    delta: 1.0
+    # ignore_index: ~
+  huber_cqmix_opt:
+    type: HuberLoss
+    loss_weight: !!float 0.0
+    delta: 1.0
+    # ignore_index: ~
+
+# training config
+test:  
+  batch_size: 1
+
+# DDP setting
+dist_url: env:://

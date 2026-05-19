@@ -10,7 +10,7 @@ from copy import deepcopy
 from ptflops import get_model_complexity_info
 from torch.nn.parallel import DataParallel, DistributedDataParallel
 from torch.optim import lr_scheduler
-from utils.common import mkdir_and_rename, TensorboardLogger, TextLogger, ManualNormalize, CosineAnnealingRestartLR
+from utils.common import mkdir_and_rename, TensorboardLogger, WandbLogger, TextLogger, ManualNormalize, CosineAnnealingRestartLR
 
 
 def make_model(opt):
@@ -35,8 +35,7 @@ class BaseModel():
         
         if self.is_train:
             mkdir_and_rename(osp.join(self.exp_dir))
-            mkdir_and_rename(osp.join('tb_loggers', self.task, opt['name']))
-            self.tb_logger = TensorboardLogger(log_dir=osp.join('tb_loggers', self.task, opt['name']))
+            self.tb_logger = WandbLogger(project=self.task, name=opt['name'], config=opt)
         else:
             # ensure that output directory exists in evaluation only mode
             os.makedirs(self.exp_dir, exist_ok=True)

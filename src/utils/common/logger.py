@@ -26,3 +26,21 @@ class TensorboardLogger():
         if is_main_process():
             self.tb_logger.add_scalar(name, value, current_iter)
         return
+
+
+class WandbLogger():
+    def __init__(self, project, name, config=None):
+        if is_main_process():
+            import wandb
+            self.run = wandb.init(project=project, name=name, config=config, resume='allow')
+        self._is_main = is_main_process()
+
+    def add_scalar(self, name, value, current_iter):
+        if self._is_main:
+            import wandb
+            wandb.log({name: value}, step=current_iter)
+
+    def finish(self):
+        if self._is_main:
+            import wandb
+            wandb.finish()

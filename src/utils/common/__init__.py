@@ -1,6 +1,6 @@
 from .dist import init_distributed_mode, save_on_master, reduce_across_processes, is_main_process, is_dist_avail_and_initialized, get_world_size
 from .img_util import GaussianDownsampling, GaussianSmoothing
-from .logger import TextLogger, TensorboardLogger
+from .logger import TextLogger, TensorboardLogger, WandbLogger
 from .lr_scheduler import MultiStepRestartLR, CosineAnnealingRestartLR
 from .metrics import calculate_psnr, calculate_psnr_batch, calculate_lpips_batch, calculate_niqe_batch
 from .misc import mkdir_and_rename, rename_and_mkdir, _get_paths_from_images, quantize, check_then_rename
@@ -25,6 +25,7 @@ __all__ = [
     # logger.py
     'TextLogger',
     'TensorboardLogger',
+    'WandbLogger',
 
     # lr_scheduler.py
     'MultiStepRestartLR',

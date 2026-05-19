@@ -179,8 +179,14 @@ class SR4IRClassificationModel(BaseModel):
             metric_logger.meters["psnr"].update(psnr.item(), n=valid_batch_size)
             acc1_sr, _ = calculate_accuracy(pred_sr, label, topk=(1, 5))
             metric_logger.meters["acc1_sr"].update(acc1_sr.item(), n=batch_size)
-            metric_logger.update(lr_sr=round(self.optimizer_sr.param_groups[0]["lr"], 8))
-            metric_logger.update(lr_cls=round(self.optimizer_cls.param_groups[0]["lr"], 8))
+            lr_sr = round(self.optimizer_sr.param_groups[0]["lr"], 8)
+            lr_cls = round(self.optimizer_cls.param_groups[0]["lr"], 8)
+            metric_logger.update(lr_sr=lr_sr)
+            metric_logger.update(lr_cls=lr_cls)
+            self.tb_logger.add_scalar('train/psnr', psnr.item(), current_iter)
+            self.tb_logger.add_scalar('train/acc1_sr', acc1_sr.item(), current_iter)
+            self.tb_logger.add_scalar('train/lr_sr', lr_sr, current_iter)
+            self.tb_logger.add_scalar('train/lr_cls', lr_cls, current_iter)
             
             # update learning rate
             self.update_learning_rate()

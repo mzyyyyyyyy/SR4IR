@@ -187,9 +187,14 @@ class SR4IRSegmentationModel(BaseModel):
             
             # logging training state
             psnr, valid_batch_size = calculate_psnr_batch(quantize(img_sr), img_hr)
-            metric_logger.meters["psnr"].update(psnr.item(), n=valid_batch_size)                
-            metric_logger.update(lr_sr=round(self.optimizer_sr.param_groups[0]["lr"], 8))
-            metric_logger.update(lr_seg=round(self.optimizer_seg.param_groups[0]["lr"], 8))
+            metric_logger.meters["psnr"].update(psnr.item(), n=valid_batch_size)
+            lr_sr = round(self.optimizer_sr.param_groups[0]["lr"], 8)
+            lr_seg = round(self.optimizer_seg.param_groups[0]["lr"], 8)
+            metric_logger.update(lr_sr=lr_sr)
+            metric_logger.update(lr_seg=lr_seg)
+            self.tb_logger.add_scalar('train/psnr', psnr.item(), current_iter)
+            self.tb_logger.add_scalar('train/lr_sr', lr_sr, current_iter)
+            self.tb_logger.add_scalar('train/lr_seg', lr_seg, current_iter)
             
             # update learning rate
             self.update_learning_rate()

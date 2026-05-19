@@ -193,8 +193,13 @@ class SR4IRDetectionModel(BaseModel):
             # psnr, lr
             psnr, valid_batch_size = calculate_psnr_batch(quantize(img_sr_batch), img_hr_batch)
             metric_logger.meters["psnr"].update(psnr.item(), n=valid_batch_size)
-            metric_logger.update(lr_sr=round(self.optimizer_sr.param_groups[0]["lr"], 8))
-            metric_logger.update(lr_det=round(self.optimizer_det.param_groups[0]["lr"], 8))
+            lr_sr = round(self.optimizer_sr.param_groups[0]["lr"], 8)
+            lr_det = round(self.optimizer_det.param_groups[0]["lr"], 8)
+            metric_logger.update(lr_sr=lr_sr)
+            metric_logger.update(lr_det=lr_det)
+            self.tb_logger.add_scalar('train/psnr', psnr.item(), current_iter)
+            self.tb_logger.add_scalar('train/lr_sr', lr_sr, current_iter)
+            self.tb_logger.add_scalar('train/lr_det', lr_det, current_iter)
             
             # update learning rate
             if epoch == 1:

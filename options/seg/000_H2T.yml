@@ -9,7 +9,7 @@ deterministic: true
 # data and augmentation
 data:
   name: voc
-  path: datasets/VOC
+  path: /mnt/data/dataset/VOC
   base_size: 520
   crop_size: 480
 

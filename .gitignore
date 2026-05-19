@@ -2,11 +2,16 @@
 experiments
 tb_loggers
 datasets
+wandb
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *.swp
+*.pyc
+*$py.class
+*.so
 
 # files for experiments
 scripts

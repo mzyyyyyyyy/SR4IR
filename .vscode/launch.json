@@ -1,0 +1,44 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Testing mode",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "src/main.py",
+            "args": [
+                "-opt",
+                "options/seg/000_H2T.yml",
+                "--test_only",
+                "--visualize"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "0,1",
+                "PYTHONPATH": "${workspaceFolder}",
+                "TORCH_DISTRIBUTED_DEBUG": "DETAIL"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Debug sr4ir training",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "src/main.py",
+            "args": [
+                "-opt",
+                "options/seg/034_SR4IR_swinir_x4.yml"
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "TORCH_DISTRIBUTED_DEBUG": "DETAIL"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
