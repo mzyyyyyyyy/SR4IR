@@ -1,0 +1,53 @@
+# Inference config for SR4IR regression (base1_v2)
+# Run: cd SR4IR/src && python infer_rs.py --config ../options/reg/base1_v2_pred.yaml
+
+scale: 4   # SwinIR upscale factor (must match training)
+
+dataset:
+  input_dir: "/mnt/data/data/Landsat/eur_test2_map/2019"
+  output_dir: "/mnt/data/result/chm/EUR_base1_v2"
+
+  file_type_input: "jp2"
+  year: 2019
+
+  # Band selection — must match training config
+  selected_bands: [0, 1, 2]
+  selected_percentile: ["p50"]
+
+  # Input normalisation stats (same file as training)
+  globalnorm_stats_file: "/mnt/data/dataset/CHM_EUR/LS_test2_statistics.json"
+
+
+# Network architecture — must exactly match training config
+network_sr:
+  name: swinir
+  upscale: 4          # overridden by top-level scale at runtime
+  in_chans: 3
+  img_size: 48
+  window_size: 8
+  img_range: 1.
+  depths: [6, 6, 6, 6, 6, 6]
+  embed_dim: 180
+  num_heads: [6, 6, 6, 6, 6, 6]
+  mlp_ratio: 2
+  upsampler: 'pixelshuffle'
+  resi_connection: '1conv'
+
+network_reg:
+  name: dav2
+  weights_backbone: "depth-anything/Depth-Anything-V2-Metric-Outdoor-Base-hf"
+
+
+model:
+  # Paths to saved model weights
+  net_sr_path:  "/home/tree/Projects/SR4IR/experiments/reg/base1_v2/models/net_sr_latest.pth"
+  net_reg_path: "/home/tree/Projects/SR4IR/experiments/reg/base1_v2/models/net_reg_latest.pth"
+
+
+prediction:
+  # LR patch size read from Landsat (HR output = patch_size_lr × scale)
+  # Must be a multiple of window_size (8) for SwinIR
+  patch_size_lr: 140     # → 560 px HR output
+
+  # Stride in LR pixels
+  stride_lr: 70
